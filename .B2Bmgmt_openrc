@@ -1,0 +1,9 @@
+export OS_AUTH_URL="https://100.65.247.153:13000"
+export OS_USERNAME="admin"
+export OS_PASSWORD="eoZ37jP3T9DP4lePjUgZ0CwNQ"
+export OS_PROJECT_NAME="admin"
+export OS_USER_DOMAIN_NAME="Default"
+export OS_PROJECT_DOMAIN_NAME="Default"
+export OS_COMPUTE_API_VERSION=2.88
+export OS_IMAGE_API_VERSION=2
+export OS_INSECURE=true
