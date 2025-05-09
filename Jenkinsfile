@@ -114,24 +114,7 @@ pipeline {
                 }
             }
         }
-         stage('Upload Image to Another OpenStack Environment') {
-            steps {
-                script {
-                    def uploadScript = "${WORKSPACE}/upload-to-other-glance.sh"
-                    def glanceImageName = "${env.IMAGE_NAME}-${env.IMAGE_TIMESTAMP}"
-
-                    sh """
-                        if [ ! -f "${uploadScript}" ]; then
-                            echo "Upload script not found: ${uploadScript}"
-                            exit 1
-                        fi
-
-                        chmod +x "${uploadScript}"
-                        ${uploadScript} "${env.IMAGE_FILE_PATH}" "${glanceImageName}"
-                    """
-                }
-            }
-        }
+        
     }
 
     post {
