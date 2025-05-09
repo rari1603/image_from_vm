@@ -19,6 +19,8 @@ pipeline {
                     env.SNAPSHOT_NAME = "snapshot-from-${env.INSTANCE_ID}-${timeSuffix}"
                     env.VOLUME_NAME   = "volume-from-${env.INSTANCE_ID}-${timeSuffix}"
                     env.IMAGE_NAME    = "image-from-${env.INSTANCE_ID}-${timeSuffix}"
+                    env.LOCAL_IMAGE_PATH = "/var/lib/jenkins/${env.IMAGE_NAME}.qcow2"
+
                     echo "Generated names:"
                     echo "SNAPSHOT_NAME = ${env.SNAPSHOT_NAME}"
                     echo "VOLUME_NAME   = ${env.VOLUME_NAME}"
@@ -109,12 +111,32 @@ pipeline {
                         source ${env.OPENRC_FILE}
                         openstack image create --os-volume-api-version 3.1 --disk-format qcow2 --container-format bare --volume ${env.VOLUME_NAME} ${env.IMAGE_NAME}
                     """
-
-                    echo "✅ Pipeline complete: Snapshot → Volume → Glance Image"
                 }
             }
         }
-        
+
+        stage('Wait for Image to Become Active') {
+            steps {
+                script {
+                    echo "Waiting for image ${env.IMAGE_NAME} to become active..."
+                    waitForImage(env.IMAGE_NAME)
+                }
+            }
+        }
+
+        stage('Download Image Locally') {
+            steps {
+                script {
+                    echo "Downloading image ${env.IMAGE_NAME} to ${env.LOCAL_IMAGE_PATH}..."
+                    sh """
+                        ${env.VENV_ACTIVATE}
+                        source ${env.OPENRC_FILE}
+                        openstack image save --file ${env.LOCAL_IMAGE_PATH} ${env.IMAGE_NAME}
+                    """
+                    echo "Image saved to: ${env.LOCAL_IMAGE_PATH}"
+                }
+            }
+        }
     }
 
     post {
@@ -159,6 +181,24 @@ def waitForVolume(volumeName) {
                 error "Volume creation failed."
             }
             return (status == "available")
+        }
+    }
+}
+
+// Utility function: wait until image status is 'active'
+def waitForImage(imageName) {
+    timeout(time: 5, unit: 'MINUTES') {
+        waitUntil {
+            def status = sh(script: """
+                ${env.VENV_ACTIVATE}
+                source ${env.OPENRC_FILE}
+                openstack image show ${imageName} -f value -c status
+            """, returnStdout: true).trim()
+            echo "Image status: '${status}'"
+            if (status == "error" || status == "killed") {
+                error "Image creation failed."
+            }
+            return (status == "active")
         }
     }
 }
