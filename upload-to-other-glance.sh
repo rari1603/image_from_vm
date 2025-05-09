@@ -18,9 +18,9 @@ cd /tmp || {
 }
 
 # Set environment for target OpenStack (destination)
-export OS_AUTH_URL="https://100.65.247.153:13000"
+export OS_AUTH_URL="https://100.65.247.201:13000"
 export OS_USERNAME="admin"
-export OS_PASSWORD="eoZ37jP3T9DP4lePjUgZ0CwNQ"
+export OS_PASSWORD="bgyDFHPkFMyogIDSJhCxQg1G4"
 export OS_PROJECT_NAME="admin"
 export OS_USER_DOMAIN_NAME="Default"
 export OS_PROJECT_DOMAIN_NAME="Default"
