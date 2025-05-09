@@ -16,6 +16,7 @@ pipeline {
             steps {
                 script {
                     def timeSuffix = new Date().format("yyyyMMdd-HHmmss", TimeZone.getTimeZone("UTC"))
+                    env.IMAGE_TIMESTAMP = timeSuffix
                     env.SNAPSHOT_NAME = "snapshot-from-${env.INSTANCE_ID}-${timeSuffix}"
                     env.VOLUME_NAME   = "volume-from-${env.INSTANCE_ID}-${timeSuffix}"
                     env.IMAGE_NAME    = "image-from-${env.INSTANCE_ID}-${timeSuffix}"
@@ -25,6 +26,7 @@ pipeline {
                     echo "SNAPSHOT_NAME = ${env.SNAPSHOT_NAME}"
                     echo "VOLUME_NAME   = ${env.VOLUME_NAME}"
                     echo "IMAGE_NAME    = ${env.IMAGE_NAME}"
+                    echo "IMAGE_TIMESTAMP = ${env.IMAGE_TIMESTAMP}"
                 }
             }
         }
@@ -73,7 +75,7 @@ pipeline {
         stage('Create Snapshot') {
             steps {
                 script {
-                    echo "Creating snapshot from hardcoded volume ID: ${BOOT_VOLUME_ID}"
+                    echo "Creating snapshot from volume ID: ${BOOT_VOLUME_ID}"
                     sh """
                         ${env.VENV_ACTIVATE}
                         source ${env.OPENRC_FILE}
@@ -134,6 +136,25 @@ pipeline {
                         openstack image save --file ${env.LOCAL_IMAGE_PATH} ${env.IMAGE_NAME}
                     """
                     echo "Image saved to: ${env.LOCAL_IMAGE_PATH}"
+                }
+            }
+        }
+
+        stage('Upload Image to Another OpenStack Environment') {
+            steps {
+                script {
+                    def uploadScript = "${WORKSPACE}/upload-to-other-glance.sh"
+                    def glanceImageName = "${env.IMAGE_NAME}-${env.IMAGE_TIMESTAMP}"
+
+                    sh """
+                        if [ ! -f "${uploadScript}" ]; then
+                            echo "Upload script not found: ${uploadScript}"
+                            exit 1
+                        fi
+
+                        chmod +x "${uploadScript}"
+                        ${uploadScript} "${env.LOCAL_IMAGE_PATH}" "${glanceImageName}"
+                    """
                 }
             }
         }
